@@ -1,16 +1,15 @@
 use std::collections::VecDeque;
-use crate::pqueue::{Key, PriorityQueue};
+use crate::pqueue::PriorityQueue;
 
-pub struct BinomialNode<V> where V: Key {
+pub struct BinomialNode<V: PartialOrd> {
     order: usize,
     value: V,
-    key: <V as Key>::Key,
     next_smaller_sibling: Option<Box<BinomialNode<V>>>,
     highest_order_child: Option<Box<BinomialNode<V>>>,
 }
 
-impl<V: Key> BinomialNode<V> {
-    fn pretty_string(&self, depth: usize) -> String where <V as Key>::Key: std::fmt::Display {
+impl<V: PartialOrd> BinomialNode<V> {
+    fn pretty_string(&self, depth: usize) -> String where V: std::fmt::Display {
         let mut s = self.info_string(depth)+"\n";
         let ochild = &self.highest_order_child;
         if let Some(child) = ochild {
@@ -22,8 +21,8 @@ impl<V: Key> BinomialNode<V> {
         s.pop();
         s
     }
-    fn info_string(&self, depth: usize) -> String where <V as Key>::Key: std::fmt::Display {
-        let s: String = "\t".repeat(depth)+"order: "+&self.order.to_string() + " key: " + &self.key.to_string();
+    fn info_string(&self, depth: usize) -> String where V: std::fmt::Display {
+        let s: String = "\t".repeat(depth)+"order: "+&self.order.to_string() + " value: " + &self.value.to_string();
         return s
     }
     fn take_child(&mut self) -> Option<BinomialNode<V>> {
@@ -41,7 +40,7 @@ impl<V: Key> BinomialNode<V> {
     fn take_value(self) -> V { self.value }
     fn meld(mut self, mut other: Self) -> Self {
         if self.order == other.order {
-            if self.key > other.key { return other.meld(self) }
+            if self.value > other.value { return other.meld(self) }
             other.next_smaller_sibling = self.highest_order_child.take();
             self.highest_order_child = Some(Box::new(other));
             self.order += 1;
@@ -49,43 +48,37 @@ impl<V: Key> BinomialNode<V> {
         } else { unreachable!(); }
     }
     fn new(v: V) -> Self {
-        return BinomialNode { key: v.eval(), value: v, next_smaller_sibling: None, highest_order_child: None, order: 0 }
+        return BinomialNode { value: v, next_smaller_sibling: None, highest_order_child: None, order: 0 }
     }
 }
 
-pub struct BinomialHeap<V> where V: Key {
+pub struct BinomialHeap<V> where V: PartialOrd {
     roots: VecDeque<BinomialNode<V>>,
-    min_index: Option<usize>,
 }
 
-impl<V: Key> BinomialHeap<V> {
-    pub fn new() -> Self {
-        BinomialHeap { roots: VecDeque::new(), min_index: None }
-    }
-    fn set_min_index(&mut self) {
-        if self.roots.len() == 0 { self.min_index = None; return }
+impl<V: PartialOrd> BinomialHeap<V> {
+    fn get_min_index(&self) -> Option<usize> {
+        if self.roots.len() == 0 { return None }
         let mut i = 0;
-        let mut key_min = &self.roots[0].key;
+        let mut key_min = &self.roots[0].value;
         for (j, n) in self.roots.iter().enumerate() {
-            if n.key < *key_min { key_min = &n.key; i = j; }
+            if n.value < *key_min { key_min = &n.value; i = j; }
         }
-        self.min_index = Some(i);
+        Some(i)
     }
 }
 
-impl<V> PriorityQueue<V> for BinomialHeap<V> where V: Key,
-    <V as Key>::Key: PartialOrd +std::fmt::Display{
-    fn empty() -> Self { BinomialHeap::new() }
-    fn find_min(&self) -> Option<&<V as Key>::Key> {
-        match self.min_index {
+impl<V: PartialOrd> PriorityQueue<V> for BinomialHeap<V> {
+    fn empty() -> Self { BinomialHeap { roots: VecDeque::new() } }
+    fn find_min(&self) -> Option<&V> {
+        match self.get_min_index() {
             None => None,
-            Some(u) => Some(&self.roots[u].key),
+            Some(i) => Some(&self.roots[i].value),
         }
     }
     fn delete_min(&mut self) -> Option<V> {
-        if let Some(u) = self.min_index {
-            let mut min_node = self.roots.remove(u).unwrap();
-            self.set_min_index();
+        if let Some(i) = self.get_min_index() {
+            let mut min_node = self.roots.remove(i).unwrap();
             let mut ochild = min_node.take_child();
             let v = min_node.take_value();
             let mut other_roots = VecDeque::new();
@@ -93,21 +86,20 @@ impl<V> PriorityQueue<V> for BinomialHeap<V> where V: Key,
                 ochild = child.take_sibling();
                 other_roots.push_front(child);
             }
-            let mut other = BinomialHeap {roots: other_roots, min_index: None};
-            other.set_min_index();
+            let mut other = BinomialHeap {roots: other_roots};
             self.merge(&mut other);
             Some(v)
         } else { None }
     }
     fn insert(&mut self, other: V) {
         let node = BinomialNode::new(other);
-        let mut other = BinomialHeap { roots: VecDeque::from(vec![node]), min_index: Some(0) };
+        let mut other = BinomialHeap { roots: VecDeque::from(vec![node]) };
         self.merge(&mut other);
     }
     fn merge(&mut self, other: &mut Self) {
         let mut r: VecDeque<BinomialNode<V>> = VecDeque::new();
         if other.roots.len() == 0 { return }
-        if self.roots.len() == 0 { self.roots.append(&mut other.roots); self.min_index = other.min_index.take(); return }
+        if self.roots.len() == 0 { self.roots.append(&mut other.roots); return }
         let mut on1 = None;
         let mut on2 = None;
         let mut left_over: Option<BinomialNode<V>> = None;
@@ -117,7 +109,6 @@ impl<V> PriorityQueue<V> for BinomialHeap<V> where V: Key,
             match (on1.take(), on2.take(), left_over.take()) {
                 (None, None, None) => {
                     self.roots = r;
-                    self.set_min_index();
                     return
                 },
                 (None, None, Some(n)) => { r.push_back(n) }
@@ -140,13 +131,13 @@ impl<V> PriorityQueue<V> for BinomialHeap<V> where V: Key,
     }
 }
 
-impl<V: Key> std::fmt::Display for BinomialNode<V> where <V as Key>::Key: std::fmt::Display {
+impl<V: PartialOrd> std::fmt::Display for BinomialNode<V> where V: std::fmt::Display {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.pretty_string(0))
     }
 }
 
-impl<V: Key> std::fmt::Display for BinomialHeap<V> where <V as Key>::Key: std::fmt::Display {
+impl<V: PartialOrd> std::fmt::Display for BinomialHeap<V> where V: std::fmt::Display {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = "length: ".to_string() + &self.roots.len().to_string()+"\n";
         for v in self.roots.iter() {

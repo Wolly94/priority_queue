@@ -1,11 +1,17 @@
-//use priority_queue::*;
+mod test;
 mod performance_test;
-use performance_test::{get_test_pqueues, get_test_vec, perform_insert, TestPQueue};
+use priority_queue::*;
+use performance_test::{get_test_vec, test_queues};
 
 fn main() {
-    let v = get_test_pqueues();
-    let t = get_test_vec(100, 100);
-    let res = perform_insert(v, t);
+    let v: Vec<Box<dyn PriorityQueue<usize>>> = vec![
+        //Box::new(NaivePQueue::empty()),
+        //Box::new(BisectionPQueue::empty()),
+        Box::new(BinomialHeap::empty()),
+        Box::new(<RPQ::<usize, BinomialHeap<usize>> as PriorityQueue<_>>::empty()),
+    ];
+    let t = get_test_vec(1000000, 1000000);
+    let res = test_queues(v, t);
     for qtest in res {
         println!("{}", qtest);
     }

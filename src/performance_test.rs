@@ -11,14 +11,6 @@ pub fn get_test_vec(n: usize, upper_bound: usize) -> Vec<usize> {
 
 type QueueVec = Vec<Box<dyn PriorityQueue<usize>>>;
 
-pub fn get_test_pqueues() -> QueueVec {
-    let mut l: Vec<Box<dyn PriorityQueue<usize>>> = vec![];
-    //l.push(Box::new(NaivePQueue::new()));
-    //l.push(Box::new(BisectionPQueue::new()));
-    l.push(Box::new(BinomialHeap::new()));
-    l
-}
-
 pub struct TestPQueue {
     q: Box<dyn PriorityQueue<usize>>,
     insertion_time: u128,
@@ -31,7 +23,7 @@ impl Display for TestPQueue {
     }
 }
 
-pub fn perform_insert(l: QueueVec, test_vec: Vec<usize>) -> Vec<TestPQueue> {
+pub fn test_queues(l: QueueVec, test_vec: Vec<usize>) -> Vec<TestPQueue> {
     let mut result: Vec<TestPQueue> = vec![];
     for mut bqueue in l.into_iter() {
         let copy_vec = test_vec.clone();

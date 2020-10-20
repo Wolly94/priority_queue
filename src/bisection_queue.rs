@@ -1,61 +1,40 @@
 use std::collections::VecDeque;
-use crate::pqueue::{Key, PriorityQueue};
+use crate::pqueue::PriorityQueue;
 
-pub struct BisectionPQueue<V> where V: Key {
-    l: VecDeque<(<V as Key>::Key, V)>
+pub struct BisectionPQueue<V> where V: PartialOrd {
+    l: VecDeque<V>,
 }
 
-impl<V: Key> BisectionPQueue<V> {
-    pub fn new() -> Self {
-        BisectionPQueue { l: VecDeque::new() }
-    }
-}
-
-impl<V> PriorityQueue<V> for BisectionPQueue<V> where V: Key,
-    <V as Key>::Key: PartialOrd {
-    fn empty() -> Self { BisectionPQueue::new() }
-    fn find_min(&self) -> Option<&<V as Key>::Key> {
-        match self.l.len() {
-            0 => None,
-            _ => Some(&self.l[0].0),
-        }
-    }
-    fn delete_min(&mut self) -> Option<V> { 
-        match self.l.pop_front() {
-            None => None,
-            Some(t) => Some(t.1),
-        }
-    }
+impl<V> PriorityQueue<V> for BisectionPQueue<V> where V: PartialOrd {
+    fn empty() -> Self { BisectionPQueue { l: VecDeque::new() } }
+    fn find_min(&self) -> Option<&V> { self.l.get(0) }
+    fn delete_min(&mut self) -> Option<V> { self.l.pop_front() }
     fn insert(&mut self, other: V) {
-        let k = other.eval();
-        if self.l.len() == 0 { self.l.push_back((k, other)); return }
+        if self.l.len() == 0 { self.l.push_back(other); return }
         let mut i0 = 0;
         let mut i1 = self.l.len()-1;
         loop {
-            let k1 = &self.l[i0].0;
-            let k2 = &self.l[i1].0;
-            if *k1 <= k && k < *k2 {
+            if self.l[i0] <= other && other < self.l[i1] {
                 let j = (i0+i1)/2;
                 if j == i0 {
-                    self.l.insert(i1, (k, other));
+                    self.l.insert(i1, other);
                     return
                 }
-                let kj = &self.l[j].0;
-                if *kj <= k {
+                if self.l[j] <= other {
                     i0 = j;
                 } else {
                     i1 = j;
                 }
             }
-            else if k < *k1 { self.l.push_front((k, other)); return }
-            else { self.l.push_back((k, other)); return }
+            else if other < self.l[i0] { self.l.push_front(other); return }
+            else { self.l.push_back(other); return }
         }
     }
     fn merge(&mut self, other: &mut Self) {
         let mut i = 0;
-        while let Some((k, v)) = other.l.pop_front() {
-            while i < self.l.len() && self.l[i].0 <= k { i+=1; }
-            self.l.insert(i, (k, v));
+        while let Some(v) = other.l.pop_front() {
+            while i < self.l.len() && self.l[i] <= v { i+=1; }
+            self.l.insert(i, v);
         }
     }
 }
