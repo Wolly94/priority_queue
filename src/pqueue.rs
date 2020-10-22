@@ -43,15 +43,27 @@ where V: PartialOrd, Q: PriorityQueue<V> {
         }
     }
     fn delete_min(&mut self) -> Option<V> {
-        match std::mem::replace(self, RPQ::Empty) {
-            RPQ::Empty => None,
-            RPQ::Is(v, mut q) => {
+        match self {
+            RPQ::Empty => return None,
+            RPQ::Is(ref mut v, ref mut q) => {
                 if let Some(new_min) = q.delete_min() {
-                    std::mem::replace(self, RPQ::Is(new_min, q));
+                    return Some(std::mem::replace(v, new_min))
                 }
-                Some(v)
             },
         }
+        match std::mem::replace(self, RPQ::Empty) {
+            RPQ::Is(v, _) => Some(v),
+            _ => unreachable!(),
+        }
+        //match std::mem::replace(self, RPQ::Empty) {
+        //    RPQ::Empty => None,
+        //    RPQ::Is(v, mut q) => {
+        //        if let Some(new_min) = q.delete_min() {
+        //            std::mem::replace(self, RPQ::Is(new_min, q));
+        //        }
+        //        Some(v)
+        //    },
+        //}
     }
     fn insert(&mut self, other: V) {
         match self {

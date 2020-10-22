@@ -153,7 +153,7 @@ mod tests {
 
     #[test]
     fn testing_queue() {
-        let mut q = BinomialHeap::new();
+        let mut q = BinomialHeap::empty();
         q.insert(5);
         let r = vec![5];
         let mut i = 0;

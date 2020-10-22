@@ -1,4 +1,3 @@
-mod test;
 mod performance_test;
 use priority_queue::*;
 use performance_test::{get_test_vec, test_queues};

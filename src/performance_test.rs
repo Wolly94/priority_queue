@@ -12,7 +12,7 @@ pub fn get_test_vec(n: usize, upper_bound: usize) -> Vec<usize> {
 type QueueVec = Vec<Box<dyn PriorityQueue<usize>>>;
 
 pub struct TestPQueue {
-    q: Box<dyn PriorityQueue<usize>>,
+    //q: Box<dyn PriorityQueue<usize>>,
     insertion_time: u128,
     removal_time: u128,
 }
@@ -36,7 +36,7 @@ pub fn test_queues(l: QueueVec, test_vec: Vec<usize>) -> Vec<TestPQueue> {
         while let Some(_) = (*bqueue).delete_min() {
             //println!("{}", v);
         }
-        let tpq = TestPQueue { q: bqueue, removal_time: now.elapsed().as_millis(), insertion_time: insertion_time };
+        let tpq = TestPQueue { /*q: bqueue,*/ removal_time: now.elapsed().as_millis(), insertion_time: insertion_time };
         result.push(tpq);
     }
     result

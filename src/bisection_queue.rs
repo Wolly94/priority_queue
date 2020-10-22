@@ -45,9 +45,9 @@ mod tests {
 
     #[test]
     fn testing_queue() {
-        let mut q = BisectionPQueue::new();
+        let mut q = BisectionPQueue::empty();
         for i in 0..10 { q.insert(20-2*i); }
-        let mut p = BisectionPQueue::new();
+        let mut p = BisectionPQueue::empty();
         for j in 0..10 { q.insert(20-1-2*j); }
         q.merge(&mut p);
         let r = (1..21).collect::<Vec<usize>>();
